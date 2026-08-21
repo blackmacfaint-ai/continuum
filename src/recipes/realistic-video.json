@@ -1,0 +1,116 @@
+{
+  "uniqueId": "realistic-video",
+  "name": "Realistic Video",
+  "displayName": "Realistic Video",
+  "description": "Fotorealistische Video-Generierung: ComfyUI realisticVisionV60B1 576x1024 als Basis-Frame + minimax-h3 (2830065 int8) / zImageTurbo (1353314) 6 Frames sequenziell via ffmpeg 24fps 720p, Fallback 6x Ken-Burns",
+  "version": 1,
+  "view": "chat",
+  "entityType": "room",
+  "layout": {
+    "main": ["chat-widget"],
+    "right": null
+  },
+  "pipeline": [
+    {
+      "command": "rag/build",
+      "params": {
+        "maxMessages": 20,
+        "includeParticipants": false
+      },
+      "outputTo": "ragContext"
+    },
+    {
+      "command": "ai/should-respond",
+      "params": {
+        "ragContext": "$ragContext",
+        "strategy": "human-focused"
+      },
+      "outputTo": "decision"
+    },
+    {
+      "command": "image/generate-realistic",
+      "params": {
+        "prompt": "$ragContext",
+        "negativePrompt": "blurry, low quality, distorted, deformed, bad anatomy",
+        "width": 576,
+        "height": 1024,
+        "steps": 25,
+        "cfg": 7,
+        "checkpoint": "realisticVisionV60B1_v51HyperVAE.safetensors"
+      },
+      "outputTo": "baseFrame",
+      "condition": "decision.shouldRespond === true"
+    },
+    {
+      "command": "video/generate",
+      "params": {
+        "prompt": "$ragContext",
+        "model": "minimax-h3",
+        "baseImage": "$baseFrame",
+        "width": 576,
+        "height": 1024,
+        "frames": 6,
+        "fps": 24,
+        "sequential": true,
+        "fallback": "ken-burns"
+      },
+      "outputTo": "generatedVideo",
+      "condition": "decision.shouldRespond === true",
+      "onError": "retry"
+    },
+    {
+      "command": "artifacts/store",
+      "params": {
+        "artifact": "$generatedVideo",
+        "type": "video"
+      },
+      "condition": "decision.shouldRespond === true"
+    }
+  ],
+  "ragTemplate": {
+    "messageHistory": {
+      "maxMessages": 20,
+      "orderBy": "chronological",
+      "includeTimestamps": true
+    },
+    "participants": {
+      "includeRoles": false,
+      "includeExpertise": false,
+      "includeHistory": false
+    }
+  },
+  "strategy": {
+    "conversationPattern": "human-focused",
+    "responseRules": [
+      "Wait for humans to initiate video requests",
+      "Generate base frame via realisticVision then animate via minimax-h3 or fallback",
+      "Keep VRAM sequential FLUX/Minimax auto-unload after batch",
+      "Return 720p 6s VR clip or 6x Ken-Burns fallback via artifacts/store"
+    ],
+    "decisionCriteria": [
+      "Was I asked for a realistic video or B-roll?",
+      "Is human intent clear from ragContext?",
+      "Has a human spoken recently?",
+      "Would video add value over image?"
+    ]
+  },
+  "tools": [
+    {
+      "name": "image/generate-realistic",
+      "description": "Generate base photorealistic frame",
+      "enabledFor": ["ai"]
+    },
+    {
+      "name": "video/generate",
+      "description": "Animate frames via minimax-h3 or fallback",
+      "enabledFor": ["ai"]
+    },
+    {
+      "name": "artifacts/store",
+      "description": "Store generated video artifact",
+      "enabledFor": ["ai"]
+    }
+  ],
+  "isPublic": true,
+  "tags": ["realistic", "video", "money-printer", "comfyui", "minimax-h3", "zImageTurbo"]
+}

@@ -1,0 +1,94 @@
+{
+  "uniqueId": "realistic-image",
+  "name": "Realistic Image",
+  "displayName": "Realistic Image",
+  "description": "Fotorealistische 576x1024 Bildgenerierung via ComfyUI realisticVisionV60B1_v51HyperVAE (SD1.5 HyperVAE, euler 25 cfg 7), human-focused RAG fur faceless Content",
+  "version": 1,
+  "view": "chat",
+  "entityType": "room",
+  "layout": {
+    "main": ["chat-widget"],
+    "right": null
+  },
+  "pipeline": [
+    {
+      "command": "rag/build",
+      "params": {
+        "maxMessages": 20,
+        "includeParticipants": false
+      },
+      "outputTo": "ragContext"
+    },
+    {
+      "command": "ai/should-respond",
+      "params": {
+        "ragContext": "$ragContext",
+        "strategy": "human-focused"
+      },
+      "outputTo": "decision"
+    },
+    {
+      "command": "image/generate-realistic",
+      "params": {
+        "prompt": "$ragContext",
+        "negativePrompt": "blurry, low quality, distorted, deformed, bad anatomy",
+        "width": 576,
+        "height": 1024,
+        "steps": 25,
+        "cfg": 7,
+        "checkpoint": "realisticVisionV60B1_v51HyperVAE.safetensors"
+      },
+      "outputTo": "generatedImage",
+      "condition": "decision.shouldRespond === true"
+    },
+    {
+      "command": "artifacts/store",
+      "params": {
+        "artifact": "$generatedImage",
+        "type": "image"
+      },
+      "condition": "decision.shouldRespond === true"
+    }
+  ],
+  "ragTemplate": {
+    "messageHistory": {
+      "maxMessages": 20,
+      "orderBy": "chronological",
+      "includeTimestamps": true
+    },
+    "participants": {
+      "includeRoles": false,
+      "includeExpertise": false,
+      "includeHistory": false
+    }
+  },
+  "strategy": {
+    "conversationPattern": "human-focused",
+    "responseRules": [
+      "Wait for humans to initiate image requests",
+      "Generate photorealistic images via ComfyUI realisticVision",
+      "Avoid AI-to-AI loops by checking human speaker",
+      "Return 576x1024 portrait PNG via artifacts/store"
+    ],
+    "decisionCriteria": [
+      "Was I mentioned or asked for an image?",
+      "Is my expertise relevant to image generation?",
+      "Has a human spoken recently?",
+      "Would generating an image add value?"
+    ]
+  },
+  "tools": [
+    {
+      "name": "image/generate-realistic",
+      "description": "Generate photorealistic image via ComfyUI",
+      "enabledFor": ["ai"]
+    },
+    {
+      "name": "artifacts/store",
+      "description": "Store generated image artifact",
+      "enabledFor": ["ai"]
+    }
+  ],
+  "isPublic": true,
+  "tags": ["realistic", "image", "money-printer", "comfyui", "sd15", "hypervae"]
+}

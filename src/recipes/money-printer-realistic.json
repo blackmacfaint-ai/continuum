@@ -1,0 +1,195 @@
+{
+  "uniqueId": "money-printer-realistic",
+  "name": "Money Printer Realistic",
+  "displayName": "Money Printer Realistic",
+  "description": "Faceless TikTok/YouTube Money Printer: Qwen GGUF 150 Worter de Script -> Kokoro/Voicebox TTS -> image/generate-realistic batch 3 (576x1024) -> video/generate minimax-h3 B-Roll optional -> ffmpeg_tiktok 1080x1920 9:16 subtitles small -> artifacts/store -> youtube/upload",
+  "version": 1,
+  "view": "chat",
+  "entityType": "room",
+  "layout": {
+    "main": ["chat-widget"],
+    "right": null
+  },
+  "pipeline": [
+    {
+      "command": "rag/build",
+      "params": {
+        "maxMessages": 20,
+        "includeParticipants": false
+      },
+      "outputTo": "ragContext"
+    },
+    {
+      "command": "ai/should-respond",
+      "params": {
+        "ragContext": "$ragContext",
+        "strategy": "human-focused"
+      },
+      "outputTo": "decision"
+    },
+    {
+      "command": "ai/generate",
+      "params": {
+        "ragContext": "$ragContext",
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "maxTokens": 500,
+        "language": "de",
+        "wordLimit": 150,
+        "prompt": "Schreibe ein 150-Worter deutsches faceless TikTok-Skript basierend auf: $ragContext",
+        "model": "hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M"
+      },
+      "outputTo": "generatedScript",
+      "condition": "decision.shouldRespond === true"
+    },
+    {
+      "command": "tts/speak",
+      "params": {
+        "text": "$generatedScript",
+        "voice": "martin",
+        "engine": "kokoro",
+        "fallbackEngine": "voicebox",
+        "lang": "de",
+        "profile": "Overlay DE"
+      },
+      "outputTo": "generatedAudio",
+      "condition": "decision.shouldRespond === true"
+    },
+    {
+      "command": "image/generate-realistic",
+      "params": {
+        "prompt": "$generatedScript",
+        "negativePrompt": "blurry, low quality, distorted, deformed, bad anatomy",
+        "width": 576,
+        "height": 1024,
+        "steps": 25,
+        "cfg": 7,
+        "batchSize": 3,
+        "checkpoint": "realisticVisionV60B1_v51HyperVAE.safetensors"
+      },
+      "outputTo": "generatedImages",
+      "condition": "decision.shouldRespond === true"
+    },
+    {
+      "command": "video/generate",
+      "params": {
+        "prompt": "$generatedScript",
+        "model": "minimax-h3",
+        "baseImage": "$generatedImages",
+        "width": 576,
+        "height": 1024,
+        "frames": 6,
+        "fps": 24,
+        "sequential": true,
+        "optional": true
+      },
+      "outputTo": "bRoll",
+      "condition": "decision.shouldRespond === true",
+      "onError": "skip"
+    },
+    {
+      "command": "ffmpeg_tiktok",
+      "params": {
+        "images": "$generatedImages",
+        "audio": "$generatedAudio",
+        "video": "$bRoll",
+        "width": 1080,
+        "height": 1920,
+        "fps": 24,
+        "subtitles": true,
+        "subtitleLang": "de",
+        "subtitleModel": "small"
+      },
+      "outputTo": "tiktokVideo",
+      "condition": "decision.shouldRespond === true"
+    },
+    {
+      "command": "artifacts/store",
+      "params": {
+        "artifact": "$tiktokVideo",
+        "type": "video"
+      },
+      "condition": "decision.shouldRespond === true"
+    },
+    {
+      "command": "youtube/upload",
+      "params": {
+        "video": "$tiktokVideo",
+        "title": "$generatedScript",
+        "description": "$generatedScript",
+        "privacy": "public",
+        "category": "faceless"
+      },
+      "condition": "decision.shouldRespond === true",
+      "onError": "skip"
+    }
+  ],
+  "ragTemplate": {
+    "messageHistory": {
+      "maxMessages": 20,
+      "orderBy": "chronological",
+      "includeTimestamps": true
+    },
+    "participants": {
+      "includeRoles": false,
+      "includeExpertise": false,
+      "includeHistory": false
+    }
+  },
+  "strategy": {
+    "conversationPattern": "human-focused",
+    "responseRules": [
+      "Wait for humans to request money-printer content",
+      "Generate concise 150-word German script via Qwen GGUF ollama 11434",
+      "Synthesize audio via Kokoro 8881 martin fallback Voicebox 17493 overlay DE",
+      "Generate 3x 576x1024 frames via realisticVision then optional minimax-h3 B-Roll",
+      "Compose final 1080x1920 9:16 MP4 via ffmpeg_tiktok with faster-whisper small subtitles",
+      "Store artifact and upload to youtube with resumable retry 3x"
+    ],
+    "decisionCriteria": [
+      "Did human request faceless video or money-printer content?",
+      "Is ragContext sufficient for 150-word DE script?",
+      "Would generating full TikTok add value for this room?",
+      "Is ComfyUI/Ollama/Kokoro available or should voice-only fallback?"
+    ]
+  },
+  "tools": [
+    {
+      "name": "ai/generate",
+      "description": "Generate 150-word German script via Qwen GGUF",
+      "enabledFor": ["ai"]
+    },
+    {
+      "name": "tts/speak",
+      "description": "Synthesize speech via Kokoro/Voicebox",
+      "enabledFor": ["ai"]
+    },
+    {
+      "name": "image/generate-realistic",
+      "description": "Generate 3 photorealistic frames",
+      "enabledFor": ["ai"]
+    },
+    {
+      "name": "video/generate",
+      "description": "Optional B-Roll via minimax-h3",
+      "enabledFor": ["ai"]
+    },
+    {
+      "name": "ffmpeg_tiktok",
+      "description": "Compose 1080x1920 TikTok MP4 with subtitles",
+      "enabledFor": ["ai"]
+    },
+    {
+      "name": "artifacts/store",
+      "description": "Store final video artifact",
+      "enabledFor": ["ai"]
+    },
+    {
+      "name": "youtube/upload",
+      "description": "Upload to YouTube with resumable API",
+      "enabledFor": ["ai"]
+    }
+  ],
+  "isPublic": true,
+  "tags": ["realistic", "money-printer", "faceless", "tiktok", "youtube", "comfyui", "qwen", "kokoro"]
+}
