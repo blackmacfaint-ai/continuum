@@ -1,0 +1,5 @@
+Stub training with 3 images
+Base: realisticVisionV60B1_v51HyperVAE
+Rank: 16 Alpha: 32 LR: 0.0001 Epochs: 3
+Hardware: AMD RX 6800 XT 12GB directml privateuseone
+Status: stub - replace with real accelerate training

@@ -1,0 +1,14 @@
+{
+  "base_model_name_or_path": "realisticVisionV60B1_v51HyperVAE",
+  "r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.0,
+  "target_modules": [
+    "to_q",
+    "to_k",
+    "to_v",
+    "to_out.0"
+  ],
+  "task_type": "DIFFUSION",
+  "inference_mode": true
+}

@@ -1,0 +1,10 @@
+{
+  "metrics": {
+    "fid": 12.5,
+    "clip_score": 0.31,
+    "human_preference": 0.78
+  },
+  "resolution": "576x1024",
+  "samplePrompts": 20,
+  "stub": true
+}

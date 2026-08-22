@@ -1,0 +1,6 @@
+{
+  "stub": true,
+  "quant": "Q4_K_M",
+  "source": "models\\lora\\realistic-vision-lora",
+  "purpose": "FLUX 12GB + Minimax 10GB sequential on 12GB VRAM"
+}

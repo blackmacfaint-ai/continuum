@@ -1,0 +1,11 @@
+{
+  "stub": true,
+  "rank": 16,
+  "alpha": 32,
+  "base": "realisticVisionV60B1_v51HyperVAE",
+  "epochs": 3,
+  "dummy_keys": [
+    "lora_unet_down_blocks_0_attentions_0_transformer_blocks_0_attn1_to_q.lora_A.weight",
+    "lora_unet_down_blocks_0_attentions_0_transformer_blocks_0_attn1_to_q.lora_B.weight"
+  ]
+}
