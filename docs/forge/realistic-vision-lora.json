@@ -1,0 +1,33 @@
+{
+  "model": "continuum-ai/realistic-vision-lora",
+  "base": "realisticVisionV60B1_v51HyperVAE",
+  "base_checkpoint": "C:\\OmniRoute\\ComfyUI\\models\\checkpoints\\realisticVisionV60B1_v51HyperVAE.safetensors",
+  "description": "Forge Alloy stub for realistic-vision LoRA — consumes money-printer-realistic L3 Engrams, produces LoRA distilled from realisticVision SD1.5 HyperVAE",
+  "consumes": "money-printer-realistic artifacts (L3 Engrams, tiktok.mp4 1080x1920, realistic images)",
+  "produces": "forge-alloy contract stub",
+  "hardware": "AMD RX 6800 XT 16GB GGUF Q4_K_M",
+  "recipe": {
+    "prun": {
+      "step": "prune",
+      "input": "L3 Engrams + artifacts/store from money-printer-realistic",
+      "output": "pruned-dataset",
+      "params": { "dedupe": true, "minScore": 0.7 }
+    },
+    "train": {
+      "step": "train",
+      "base": "realisticVisionV60B1_v51HyperVAE",
+      "method": "lora",
+      "params": { "rank": 16, "alpha": 32, "learningRate": 0.0001, "epochs": 3 }
+    },
+    "quant": {
+      "step": "quantize",
+      "method": "GGUF Q4_K_M",
+      "params": { "quant": "Q4_K_M", "purpose": "FLUX 12GB + Minimax 10GB sequential on 16GB VRAM" }
+    },
+    "eval": {
+      "step": "evaluate",
+      "metrics": ["fid", "clip_score", "human_preference"],
+      "params": { "samplePrompts": 20, "resolution": "576x1024" }
+    }
+  }
+}
