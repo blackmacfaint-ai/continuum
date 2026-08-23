@@ -7,7 +7,9 @@
   "view": "chat",
   "entityType": "room",
   "layout": {
-    "main": ["chat-widget"],
+    "main": [
+      "chat-widget"
+    ],
     "right": null
   },
   "pipeline": [
@@ -81,7 +83,7 @@
         "frames": 6,
         "fps": 24,
         "sequential": true,
-        "optional": true
+        "fallback": "ken-burns"
       },
       "outputTo": "bRoll",
       "condition": "decision.shouldRespond === true",
@@ -157,39 +159,62 @@
     {
       "name": "ai/generate",
       "description": "Generate 150-word German script via Qwen GGUF",
-      "enabledFor": ["ai"]
+      "enabledFor": [
+        "ai"
+      ]
     },
     {
       "name": "tts/speak",
       "description": "Synthesize speech via Kokoro/Voicebox",
-      "enabledFor": ["ai"]
+      "enabledFor": [
+        "ai"
+      ]
     },
     {
       "name": "image/generate-realistic",
       "description": "Generate 3 photorealistic frames",
-      "enabledFor": ["ai"]
+      "enabledFor": [
+        "ai"
+      ]
     },
     {
       "name": "video/generate",
       "description": "Optional B-Roll via minimax-h3",
-      "enabledFor": ["ai"]
+      "enabledFor": [
+        "ai"
+      ]
     },
     {
       "name": "ffmpeg_tiktok",
       "description": "Compose 1080x1920 TikTok MP4 with subtitles",
-      "enabledFor": ["ai"]
+      "enabledFor": [
+        "ai"
+      ]
     },
     {
       "name": "artifacts/store",
       "description": "Store final video artifact",
-      "enabledFor": ["ai"]
+      "enabledFor": [
+        "ai"
+      ]
     },
     {
       "name": "youtube/upload",
       "description": "Upload to YouTube with resumable API",
-      "enabledFor": ["ai"]
+      "enabledFor": [
+        "ai"
+      ]
     }
   ],
   "isPublic": true,
-  "tags": ["realistic", "money-printer", "faceless", "tiktok", "youtube", "comfyui", "qwen", "kokoro"]
+  "tags": [
+    "realistic",
+    "money-printer",
+    "faceless",
+    "tiktok",
+    "youtube",
+    "comfyui",
+    "qwen",
+    "kokoro"
+  ]
 }
