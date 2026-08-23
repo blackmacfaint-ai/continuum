@@ -1,0 +1,33 @@
+{
+  "name": "tts/speak",
+  "description": "Text-to-speech via Kokoro-DE (localhost:8881, voice martin) with Voicebox fallback (127.0.0.1:17493, profile Overlay DE). Returns the audio file path and the engine that was actually used.",
+  "params": [
+    { "name": "text", "type": "string", "description": "Text to synthesize" },
+    { "name": "voice", "type": "string", "optional": true, "description": "Kokoro voice (default martin)" },
+    { "name": "engine", "type": "string", "optional": true, "description": "kokoro | voicebox (default kokoro)" },
+    { "name": "fallbackEngine", "type": "string", "optional": true, "description": "kokoro | voicebox | none (default voicebox)" },
+    { "name": "lang", "type": "string", "optional": true, "description": "Language (default de)" },
+    { "name": "profile", "type": "string", "optional": true, "description": "Voicebox profile name (default Overlay DE)" },
+    { "name": "output", "type": "string", "optional": true, "description": "Output audio path" }
+  ],
+  "results": [
+    { "name": "success", "type": "boolean", "description": "Whether synthesis succeeded" },
+    { "name": "audioPath", "type": "string", "description": "Absolute path to the generated audio" },
+    { "name": "engine", "type": "string", "description": "Engine actually used (kokoro | voicebox)" },
+    { "name": "duration", "type": "number", "optional": true, "description": "Audio duration in seconds" },
+    { "name": "error", "type": "string", "optional": true, "description": "Error message on failure" }
+  ],
+  "examples": [
+    {
+      "description": "Synthesize with Kokoro, fallback to Voicebox",
+      "params": {
+        "text": "Die Menschen, die dir am naechsten stehen, sind oft die, die du am meisten uebersiehst.",
+        "voice": "martin",
+        "engine": "kokoro",
+        "fallbackEngine": "voicebox"
+      }
+    }
+  ],
+  "accessLevel": "ai-safe",
+  "environment": "server"
+}
