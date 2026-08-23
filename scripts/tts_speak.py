@@ -29,13 +29,14 @@ def parse_args():
     ap.add_argument("--fallback-engine", choices=["kokoro", "voicebox", "none"], default="voicebox")
     ap.add_argument("--lang", default="de")
     ap.add_argument("--profile", default="Overlay DE", help="Voicebox profile name")
+    ap.add_argument("--speed", type=float, default=1.5, help="Kokoro speech speed (1.0=normal, 2.0=fast)")
     ap.add_argument("--output", default=None, help="Output audio path (default data/audio/voice.wav)")
     ap.add_argument("--dry-run", action="store_true", help="Validate args without synthesizing")
     return ap.parse_args()
 
 
-def kokoro_speak(text: str, voice: str, out_path: pathlib.Path) -> pathlib.Path:
-    body = json.dumps({"model": "kokoro", "voice": voice, "response_format": "wav", "input": text}).encode()
+def kokoro_speak(text: str, voice: str, out_path: pathlib.Path, speed: float = 1.5) -> pathlib.Path:
+    body = json.dumps({"model": "kokoro", "voice": voice, "response_format": "wav", "input": text, "speed": speed}).encode()
     req = urllib.request.Request(KOKORO_URL, data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=60) as r:
         data = r.read()
@@ -99,7 +100,7 @@ def main() -> int:
     engine = args.engine
     try:
         if engine == "kokoro":
-            kokoro_speak(args.text, args.voice, out)
+            kokoro_speak(args.text, args.voice, out, args.speed)
         else:
             voicebox_speak(args.text, args.profile, out)
     except tts_errors as e:
@@ -110,7 +111,7 @@ def main() -> int:
         engine = args.fallback_engine
         try:
             if engine == "kokoro":
-                kokoro_speak(args.text, args.voice, out)
+                kokoro_speak(args.text, args.voice, out, args.speed)
             else:
                 voicebox_speak(args.text, args.profile, out)
         except tts_errors as e2:

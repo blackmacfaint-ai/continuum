@@ -52,7 +52,8 @@
         "engine": "kokoro",
         "fallbackEngine": "voicebox",
         "lang": "de",
-        "profile": "Overlay DE"
+        "profile": "Overlay DE",
+        "speed": 1.5
       },
       "outputTo": "generatedAudio",
       "condition": "decision.shouldRespond === true"

@@ -10,6 +10,7 @@ export interface TtsSpeakParams extends CommandParams {
   fallbackEngine?: 'kokoro' | 'voicebox' | 'none';
   lang?: string;
   profile?: string;
+  speed?: number;
   output?: string;
 }
 
@@ -41,6 +42,7 @@ export function resolveTtsSpeakParams(params: TtsSpeakParams): TtsSpeakParams {
     fallbackEngine: params.fallbackEngine ?? 'voicebox',
     lang: params.lang ?? 'de',
     profile: params.profile ?? 'Overlay DE',
+    speed: params.speed ?? 1.5,
   };
 }
 
@@ -73,6 +75,7 @@ export async function ttsSpeak(params: TtsSpeakParams): Promise<TtsSpeakResult> 
   if (resolved.fallbackEngine) args.push('--fallback-engine', resolved.fallbackEngine);
   if (resolved.lang) args.push('--lang', resolved.lang);
   if (resolved.profile) args.push('--profile', resolved.profile);
+  if (resolved.speed) args.push('--speed', String(resolved.speed));
   if (resolved.output) args.push('--output', resolved.output);
   try {
     const stdout = await runPython(helper, args);
