@@ -1,0 +1,28 @@
+{
+  "name": "artifacts/store",
+  "description": "Store a generated artifact (video/image/audio/document) in the artifact registry: copies the file to data/artifacts/files/<type>/<id>.<ext> and appends a registry entry to data/artifacts/registry.json. Returns the artifact id and stored path.",
+  "params": [
+    { "name": "artifact", "type": "string", "description": "Path to the artifact file to store" },
+    { "name": "type", "type": "string", "description": "video | image | audio | document" },
+    { "name": "tags", "type": "array", "optional": true, "description": "Optional tags for the registry entry" },
+    { "name": "registry", "type": "string", "optional": true, "description": "Registry JSON path (default data/artifacts/registry.json)" }
+  ],
+  "results": [
+    { "name": "success", "type": "boolean", "description": "Whether the artifact was stored" },
+    { "name": "artifactId", "type": "string", "description": "Generated artifact id" },
+    { "name": "path", "type": "string", "description": "Stored file path" },
+    { "name": "error", "type": "string", "optional": true, "description": "Error message on failure" }
+  ],
+  "examples": [
+    {
+      "description": "Store a video artifact",
+      "params": {
+        "artifact": "C:/OmniRoute/ComfyUI/output/money_printer_e2e/broll.mp4",
+        "type": "video",
+        "tags": ["e2e", "money-printer"]
+      }
+    }
+  ],
+  "accessLevel": "ai-safe",
+  "environment": "server"
+}
