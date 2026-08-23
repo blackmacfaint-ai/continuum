@@ -35,7 +35,7 @@ def parse_args():
 
 
 def kokoro_speak(text: str, voice: str, out_path: pathlib.Path) -> pathlib.Path:
-    body = json.dumps({"text": text, "voice": voice, "response_format": "mp3"}).encode()
+    body = json.dumps({"model": "kokoro", "voice": voice, "response_format": "wav", "input": text}).encode()
     req = urllib.request.Request(KOKORO_URL, data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=60) as r:
         data = r.read()
@@ -43,24 +43,43 @@ def kokoro_speak(text: str, voice: str, out_path: pathlib.Path) -> pathlib.Path:
     return out_path
 
 
+def voicebox_profile_id(profile: str) -> str:
+    with urllib.request.urlopen(VOICEBOX_URL + "/profiles", timeout=15) as r:
+        profiles = json.load(r)
+    for p in profiles:
+        if p.get("name") == profile or p.get("id") == profile:
+            return p["id"]
+    raise RuntimeError(f"Voicebox-Profil '{profile}' nicht gefunden")
+
+
 def voicebox_speak(text: str, profile: str, out_path: pathlib.Path) -> pathlib.Path:
-    gen = json.dumps({"text": text, "profile": profile}).encode()
+    profile_id = voicebox_profile_id(profile)
+    gen = json.dumps({
+        "profile_id": profile_id,
+        "text": text,
+        "language": "de",
+        "engine": "qwen",
+        "model_size": "0.6B",
+    }).encode()
     req = urllib.request.Request(VOICEBOX_URL + "/generate", data=gen, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with urllib.request.urlopen(req, timeout=60) as r:
         data = json.load(r)
-    gid = data.get("generation_id") or data.get("id")
+    gid = data.get("id")
     if not gid:
         raise RuntimeError("voicebox /generate returned no id")
-    for _ in range(120):
-        time.sleep(3)
-        try:
-            with urllib.request.urlopen(VOICEBOX_URL + f"/history/{gid}", timeout=10) as r:
-                h = json.load(r)
-        except (urllib.error.URLError, OSError, json.JSONDecodeError):
-            continue
-        if h.get("status") == "completed":
+    deadline = time.time() + 900
+    while True:
+        if time.time() > deadline:
+            raise TimeoutError(gid)
+        with urllib.request.urlopen(VOICEBOX_URL + f"/history/{gid}", timeout=15) as r:
+            row = json.load(r)
+        status = row.get("status")
+        if status == "completed":
             break
-    with urllib.request.urlopen(VOICEBOX_URL + f"/audio/{gid}", timeout=30) as r:
+        if status == "failed":
+            raise RuntimeError(f"Voicebox-Generierung fehlgeschlagen: {row.get('error')}")
+        time.sleep(5)
+    with urllib.request.urlopen(VOICEBOX_URL + f"/audio/{gid}", timeout=60) as r:
         out_path.write_bytes(r.read())
     return out_path
 
