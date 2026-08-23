@@ -1,0 +1,43 @@
+{
+  "name": "video/generate",
+  "description": "Animate a base frame into a short 720p video. Default path: 6 sequential img2img frames (360-degree turn choreography) via ComfyUI realisticVisionV60B1 + ffmpeg Ken-Burns (zoompan + xfade) at 24fps. Prefers minimax-h3 / zImageTurbo when the ComfyUI model files are present, falls back to ken-burns otherwise, per the realistic-video recipe.",
+  "params": [
+    { "name": "prompt", "type": "string", "description": "Motion/choreography prompt for the animation" },
+    { "name": "baseImage", "type": "string", "description": "Path to the base frame PNG/JPG to animate" },
+    { "name": "negativePrompt", "type": "string", "optional": true, "description": "Negative prompt" },
+    { "name": "width", "type": "number", "optional": true, "description": "Frame width (default 576)" },
+    { "name": "height", "type": "number", "optional": true, "description": "Frame height (default 1024)" },
+    { "name": "steps", "type": "number", "optional": true, "description": "Sampling steps (default 25)" },
+    { "name": "cfg", "type": "number", "optional": true, "description": "CFG scale (default 7)" },
+    { "name": "seed", "type": "number", "optional": true, "description": "Fixed seed for frame consistency" },
+    { "name": "frames", "type": "number", "optional": true, "description": "Number of frames (default 6)" },
+    { "name": "fps", "type": "number", "optional": true, "description": "Output frames per second (default 24)" },
+    { "name": "model", "type": "string", "optional": true, "description": "minimax-h3 | zimage-turbo | ken-burns | auto (default)" },
+    { "name": "checkpoint", "type": "string", "optional": true, "description": "ComfyUI checkpoint name" },
+    { "name": "lora", "type": "string", "optional": true, "description": "ComfyUI LoRA name to apply to frames" },
+    { "name": "sequential", "type": "boolean", "optional": true, "description": "Generate frames sequentially (default true)" },
+    { "name": "fallback", "type": "string", "optional": true, "description": "Fallback animation strategy: ken-burns (default)" },
+    { "name": "outputDir", "type": "string", "optional": true, "description": "Output directory for frames + video" }
+  ],
+  "results": [
+    { "name": "success", "type": "boolean", "description": "Whether the video was generated" },
+    { "name": "videoPath", "type": "string", "description": "Absolute path to the generated mp4" },
+    { "name": "frames", "type": "number", "description": "Number of frames generated" },
+    { "name": "model", "type": "string", "description": "Animation strategy actually used" },
+    { "name": "duration", "type": "number", "optional": true, "description": "Video duration in seconds" },
+    { "name": "error", "type": "string", "optional": true, "description": "Error message on failure" }
+  ],
+  "examples": [
+    {
+      "description": "Animate a base frame with the ken-burns fallback",
+      "params": {
+        "prompt": "full 360-degree character showcase turn",
+        "baseImage": "C:/OmniRoute/ComfyUI/output/user_test_360_00001_.png",
+        "frames": 6,
+        "fps": 24
+      }
+    }
+  ],
+  "accessLevel": "ai-safe",
+  "environment": "server"
+}
