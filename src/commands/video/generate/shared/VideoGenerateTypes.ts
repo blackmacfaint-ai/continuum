@@ -84,12 +84,14 @@ function findHelperScript(): string | null {
 
 export async function generateVideo(params: VideoGenerateParams): Promise<VideoGenerateResult> {
   const resolved = resolveVideoGenerateParams(params);
-  const baseImage = resolved.baseImage ? path.resolve(resolved.baseImage) : null;
+  // Rezept uebergibt baseImage als Array ($generatedImages) -> alle Bilder durchreichen.
+  const rawImages = Array.isArray(params.baseImage) ? params.baseImage : (params.baseImage ? [params.baseImage] : []);
+  const baseImages = rawImages.map((p) => path.resolve(p)).filter((p) => fs.existsSync(p));
 
-  if (!baseImage || !fs.existsSync(baseImage)) {
+  if (baseImages.length === 0) {
     return createVideoGenerateResult(params, {
       success: false,
-      error: `base image not found: ${baseImage ?? 'undefined'} - run image/generate-realistic first`,
+      error: `base image not found: ${rawImages.join(', ') ?? 'undefined'} - run image/generate-realistic first`,
     });
   }
 
@@ -103,7 +105,9 @@ export async function generateVideo(params: VideoGenerateParams): Promise<VideoG
 
   const args = [
     helper,
-    '--base-image', baseImage,
+    ...(baseImages.length > 1
+      ? ['--base-images', baseImages.join(',')]
+      : ['--base-image', baseImages[0]]),
     '--prompt', resolved.prompt ?? '',
     '--negative-prompt', resolved.negativePrompt ?? '',
     '--width', String(resolved.width),

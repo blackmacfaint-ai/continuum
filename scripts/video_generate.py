@@ -16,6 +16,9 @@ Usage:
       --prompt "full 360-degree character showcase turn" --frames 6 --fps 24 --dry-run
   python scripts/video_generate.py --base-image <png> --prompt "<motion>" \
       --model minimax-h3 --fallback ken-burns --output C:/tmp/turn.mp4
+  # Mehrere Basisbilder (Rezept: baseImage als Array) in EINEM Lauf -> ein Video:
+  python scripts/video_generate.py --base-images img1.png,img2.png,img3.png \
+      --prompt "cinematic slow pan" --frames 6 --output C:/tmp/broll.mp4
 
 Prints a JSON result on stdout:
   {"success": true, "videoPath": "...", "frames": 6, "model": "ken-burns", "duration": 4.75}
@@ -222,9 +225,25 @@ def build_video(frames: list[pathlib.Path], fps: int, output: pathlib.Path, widt
         return 0.0
 
 
+def resolve_base_images(args) -> list[pathlib.Path]:
+    """Resolve --base-images (comma-separated, bevorzugt) bzw. --base-image zu einer Pfad-Liste."""
+    if args.base_images:
+        raw = [p.strip() for p in args.base_images.split(",") if p.strip()]
+    elif args.base_image:
+        raw = [args.base_image]
+    else:
+        return []
+    bases = [pathlib.Path(p) for p in raw]
+    missing = [str(b) for b in bases if not b.exists()]
+    if missing:
+        raise FileNotFoundError(f"base image not found: {', '.join(missing)}")
+    return bases
+
+
 def parse_args():
-    ap = argparse.ArgumentParser(description="Animate base frame into 720p video (realistic-video recipe)")
-    ap.add_argument("--base-image", required=True, help="Path to base frame PNG/JPG")
+    ap = argparse.ArgumentParser(description="Animate base frame(s) into 720p video (realistic-video recipe)")
+    ap.add_argument("--base-image", default=None, help="Path to single base frame PNG/JPG")
+    ap.add_argument("--base-images", default=None, help="Comma-separated list of base images (multi-image bRoll) - bevorzugt gegenueber --base-image")
     ap.add_argument("--prompt", default="full body character showcase, 360 degree turn", help="Motion/choreography prompt")
     ap.add_argument("--negative-prompt", default=DEFAULT_NEGATIVE)
     ap.add_argument("--width", type=int, default=576)
@@ -248,9 +267,13 @@ def parse_args():
 
 def main() -> int:
     args = parse_args()
-    base = pathlib.Path(args.base_image)
-    if not base.exists():
-        print(json.dumps({"success": False, "error": f"base image not found: {base}"}))
+    try:
+        bases = resolve_base_images(args)
+    except FileNotFoundError as e:
+        print(json.dumps({"success": False, "error": str(e)}))
+        return 1
+    if not bases:
+        print(json.dumps({"success": False, "error": "need --base-image or --base-images"}))
         return 1
     if args.frames < 1:
         print(json.dumps({"success": False, "error": "frames must be >= 1"}))
@@ -272,8 +295,9 @@ def main() -> int:
     if args.dry_run:
         print(json.dumps({
             "success": True,
-            "videoPath": str(base),
-            "frames": args.frames,
+            "videoPath": str(bases[0]),
+            "images": len(bases),
+            "frames": args.frames * len(bases),
             "model": used_model,
             "note": note or "dry run - no frames generated",
             "dryRun": True,
@@ -285,18 +309,22 @@ def main() -> int:
         return 1
 
     out_dir = pathlib.Path(args.output).parent if args.output else (REPO_ROOT / "data" / "videos" / str(args.seed))
-    frames = generate_frames(
-        args.comfy_host, str(base), args.prompt, args.negative_prompt, args.seed,
-        args.width, args.height, args.steps, args.cfg, args.frames,
-        args.checkpoint, lora, out_dir / "frames",
-    )
+    all_frames: list[pathlib.Path] = []
+    for i, base in enumerate(bases, 1):
+        frames = generate_frames(
+            args.comfy_host, str(base), args.prompt, args.negative_prompt, args.seed,
+            args.width, args.height, args.steps, args.cfg, args.frames,
+            args.checkpoint, lora, out_dir / "frames" / f"img{i}",
+        )
+        all_frames.extend(frames)
     output = pathlib.Path(args.output) if args.output else (out_dir / "turn_video.mp4")
-    duration = build_video(frames, args.fps, output, args.width, args.height)
+    duration = build_video(all_frames, args.fps, output, args.width, args.height)
 
     print(json.dumps({
         "success": True,
         "videoPath": str(output),
-        "frames": len(frames),
+        "images": len(bases),
+        "frames": len(all_frames),
         "model": used_model,
         "duration": round(duration, 3),
         "note": note,

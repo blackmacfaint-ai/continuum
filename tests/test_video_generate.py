@@ -68,6 +68,42 @@ def test_dry_run_rejects_missing_base_image():
     assert "not found" in out["error"]
 
 
+def test_dry_run_accepts_base_images_array():
+    """--base-images (Array-Support): alle Bilder in einem Lauf, Frames = images * frames."""
+    assert BASE_IMAGE.exists()
+    r = run_helper("--base-images", f"{BASE_IMAGE},{BASE_IMAGE}",
+                   "--prompt", "cinematic pan", "--frames", "6", "--fps", "24", "--dry-run")
+    assert r.returncode == 0, f"array dry-run failed: {r.stdout} {r.stderr}"
+    out = json.loads(r.stdout)
+    assert out["success"] is True
+    assert out["images"] == 2
+    assert out["frames"] == 12
+
+
+def test_base_images_preferred_over_base_image():
+    """Wenn beides gesetzt: --base-images gewinnt."""
+    r = run_helper("--base-image", str(BASE_IMAGE),
+                   "--base-images", f"{BASE_IMAGE},{BASE_IMAGE},{BASE_IMAGE}", "--dry-run")
+    assert r.returncode == 0
+    assert json.loads(r.stdout)["images"] == 3
+
+
+def test_base_images_rejects_missing_entry():
+    r = run_helper("--base-images", f"{BASE_IMAGE},C:\\nonexistent\\x.png", "--dry-run")
+    assert r.returncode == 1
+    out = json.loads(r.stdout)
+    assert out["success"] is False
+    assert "not found" in out["error"]
+
+
+def test_missing_base_args_fails():
+    r = run_helper("--dry-run")
+    assert r.returncode == 1
+    out = json.loads(r.stdout)
+    assert out["success"] is False
+    assert "base-image" in out["error"]
+
+
 def test_model_detection_fallback():
     """minimax-h3/zImageTurbo files are not downloaded -> ken-burns fallback."""
     import importlib.util
