@@ -1,0 +1,9 @@
+Schreibe ein deutsches faceless YouTube-Short-Skript (80-90 Woerter, ~30 Sekunden Sprechzeit) ueber: {TOPIC}.
+
+Formel:
+1. HOOK (erster Satz, max 8 Woerter): eine kuehne Behauptung oder provokante Frage, die sofort unterbricht - KEINE Floskel wie "Wusstest du schon".
+2. 3 kurze, ueberraschende Fakten/Punkte in eigenen Saetzen - jede Aussage mit einer konkreten Zahl oder einem Bild.
+3. Emotionale Sprache: kraftvolle Verben und bildhafte Woerter, kurze Saetze (max 12 Woerter).
+4. CTA am Ende: eine direkte Aufforderung an den Zuschauer.
+
+Keine Einleitung, keine Zusammenfassung, kein "in diesem Video". Nur der Sprechertext, Deutsch.

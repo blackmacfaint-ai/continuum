@@ -9,6 +9,7 @@ Prints JSON: {"success": true, "text": "...", "words": 150}
 """
 import argparse
 import json
+import pathlib
 import sys
 import urllib.request
 
@@ -18,7 +19,9 @@ DEFAULT_MODEL = "hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M"
 
 def parse_args():
     ap = argparse.ArgumentParser(description="Generate German script via local Ollama")
-    ap.add_argument("--prompt", required=True, help="Prompt for the script")
+    ap.add_argument("--prompt", default="", help="Prompt for the script (oder --prompt-file nutzen)")
+    ap.add_argument("--prompt-file", default="", help="Pfad zu einer Prompt-Vorlage; {TOPIC} wird durch --topic ersetzt")
+    ap.add_argument("--topic", default="", help="Topic-Ersetzung fuer {TOPIC} in der Vorlage")
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--temperature", type=float, default=0.6)
     ap.add_argument("--max-tokens", type=int, default=500)
@@ -28,6 +31,13 @@ def parse_args():
 
 def main() -> int:
     args = parse_args()
+    if args.prompt_file:
+        pf = pathlib.Path(args.prompt_file)
+        if not pf.exists():
+            print(json.dumps({"success": False, "error": f"prompt file not found: {pf}"}))
+            return 1
+        prompt = pf.read_text(encoding="utf-8").replace("{TOPIC}", args.topic).strip()
+        args.prompt = prompt
     if not args.prompt.strip():
         print(json.dumps({"success": False, "error": "prompt is required"}))
         return 1
