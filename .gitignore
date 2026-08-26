@@ -201,3 +201,14 @@ src/workers/models/
 .airc/*
 !.airc/*.md
 !.airc/manifest.json
+
+# Money printer runtime data (generated artifacts — never commit)
+data/artifacts/
+data/audio/
+data/media/
+data/voice_samples/
+models/lora/
+
+# Python bytecode caches
+__pycache__/
+*.py[cod]
