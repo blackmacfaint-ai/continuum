@@ -52,13 +52,13 @@ set TIKTOK_OUT=data/media/e2e_tiktok.mp4
 set ARTIFACT_JSON=data/audio/artifact.json
 set YT_JSON=data/audio/youtube.json
 set YT_PRIVACY=unlisted
-set YT_VOICE=martin
-set YT_ENGINE=voicebox
+set YT_VOICE=emma
+set YT_ENGINE=kokoro
 set YT_VOICEBOX_PROFILE=Overlay DE
 set TTS_SPEED=1.15
 rem YT_PRIVACY: unlisted (Default) | public | private  — fuer echte Veroeffentlichung auf "public" stellen
-rem YT_ENGINE: voicebox (Default, Overlay DE) | kokoro
-rem YT_VOICE: nur bei YT_ENGINE=kokoro (martin|emma|dmdf|tf_mlenia|...) — Hoerproben in data/voice_samples/
+rem YT_ENGINE: kokoro (Default, schnell, ~6x vs Voicebox) | voicebox (beste Stimme, CPU-langsam ~10x Echtzeit)
+rem YT_VOICE: nur bei YT_ENGINE=kokoro (emma|martin|dmdf|tf_mlenia|...) — Hoerproben in data/voice_samples/
 rem YT_VOICEBOX_PROFILE: Voicebox-Profilname (Default "Overlay DE")
 rem TTS_SPEED: nur bei YT_ENGINE=kokoro (1.15 natuerlich, 1.0 ruhig, 1.4 hektisch)
 
