@@ -14,7 +14,7 @@ import sys
 import urllib.request
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
-DEFAULT_MODEL = "hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M"
+DEFAULT_MODEL = "hf.co/mradermacher/Qwen3.5-9B-abliterated-GGUF:Q4_K_M"
 
 
 def parse_args():
@@ -60,6 +60,7 @@ def main() -> int:
             "model": model,
             "messages": messages,
             "stream": False,
+            "think": False,
             "options": {"temperature": args.temperature, "num_predict": args.max_tokens},
         }).encode()
         req = urllib.request.Request(OLLAMA_URL, data=body, headers={"Content-Type": "application/json"})
