@@ -206,7 +206,8 @@ src/workers/models/
 data/artifacts/
 data/audio/
 data/media/
-data/voice_samples/
+data/voice_samples/*
+!data/voice_samples/*.wav
 models/lora/
 
 # Python bytecode caches
