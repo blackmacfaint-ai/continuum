@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 :: ============================================================================
-:: Money Printer — 7-Step One-Click Orchestrator
+:: Money Printer — 8-Step One-Click Orchestrator
 :: ============================================================================
 :: Usage:
 ::   run_money_printer.cmd                           (default topic)
@@ -52,15 +52,22 @@ set TIKTOK_OUT=data/media/e2e_tiktok.mp4
 set ARTIFACT_JSON=data/audio/artifact.json
 set YT_JSON=data/audio/youtube.json
 set YT_PRIVACY=unlisted
+set TT_JSON=data/audio/tiktok_upload.json
+set TT_PRIVACY=PUBLIC_TO_EVERYONE
+set TT_ENABLED=1
 set YT_VOICE=emma
 set YT_ENGINE=kokoro
 set YT_VOICEBOX_PROFILE=Overlay DE
 set TTS_SPEED=1.15
+set VID_FRAMES=3
+rem TT_ENABLED: 1 (Default, TikTok-Upload aktiv) | 0 (TikTok-Upload ueberspringen)
+rem TT_PRIVACY: PUBLIC_TO_EVERYONE (Default) | MUTUAL_FOLLOW_FRIENDS | SELF_ONLY
 rem YT_PRIVACY: unlisted (Default) | public | private  — fuer echte Veroeffentlichung auf "public" stellen
 rem YT_ENGINE: kokoro (Default, schnell, ~6x vs Voicebox) | voicebox (beste Stimme, CPU-langsam ~10x Echtzeit)
 rem YT_VOICE: nur bei YT_ENGINE=kokoro (emma|martin|dmdf|tf_mlenia|...) — Hoerproben in data/voice_samples/
 rem YT_VOICEBOX_PROFILE: Voicebox-Profilname (Default "Overlay DE")
 rem TTS_SPEED: nur bei YT_ENGINE=kokoro (1.15 natuerlich, 1.0 ruhig, 1.4 hektisch)
+rem VID_FRAMES: B-Roll-Frames pro Basisbild (3 = 9 gesamt; weniger = schneller, b-roll wird von ffmpeg_tiktok geloopt)
 
 set PROMPT_FILE=scripts\prompts\script_short.txt
 set IMG_PROMPT=%TOPIC%, cinematic, photorealistic, golden hour, dramatic lighting
@@ -69,9 +76,9 @@ set VID_PROMPT=%TOPIC%, cinematic slow pan
 :: ============================================================================
 :: STEP 1/7: ai/generate
 :: ============================================================================
-echo [%TIME%] Step 1/7: ai/generate ...
+echo [%TIME%] Step 1/8: ai/generate ...
 python scripts/ai_generate.py --prompt-file "%PROMPT_FILE%" --topic "%TOPIC%" %DRY_FLAG% > "%SCRIPT_JSON%" 2>&1
-if %ERRORLEVEL% neq 0 (echo [%TIME%] FATAL: ai/generate failed & type "%SCRIPT_JSON%" & exit /b 1)
+if %ERRORLEVEL% neq 0 (echo [%TIME%] FATAL: Step 1 ai/generate failed & type "%SCRIPT_JSON%" & exit /b 1)
 python -c "import json; d=json.load(open('%SCRIPT_JSON%',encoding='utf-8')); print('OK' if d.get('success') else 'FAIL: '+d.get('error','?')+'\n   words:',d.get('words','?'),'| model:',d.get('model','?'))"
 if %ERRORLEVEL% neq 0 (echo [%TIME%] FATAL: script JSON invalid & exit /b 1)
 if %DRY_RUN%==0 (
@@ -83,7 +90,7 @@ echo.
 :: ============================================================================
 :: STEP 2/7: tts/speak
 :: ============================================================================
-echo [%TIME%] Step 2/7: tts/speak ...
+echo [%TIME%] Step 2/8: tts/speak ...
 if %DRY_RUN%==1 (
   python scripts/tts_speak.py --text "dry" --speed 1.5 --output "%VOICE_WAV%" --dry-run > "%TTS_JSON%" 2>&1
 ) else if "%YT_ENGINE%"=="voicebox" (
@@ -98,7 +105,7 @@ echo.
 :: ============================================================================
 :: STEP 3/7: image/generate-realistic
 :: ============================================================================
-echo [%TIME%] Step 3/7: image/generate-realistic (3 images, 576x1024) ...
+echo [%TIME%] Step 3/8: image/generate-realistic (3 images, 576x1024) ...
 python scripts/image_generate_realistic.py --prompt "%IMG_PROMPT%" --batch 3 --output "%IMG_OUT%" %DRY_FLAG% > "%IMG_JSON%" 2>&1
 if %ERRORLEVEL% neq 0 (echo [%TIME%] FATAL: image/generate-realistic failed & type "%IMG_JSON%" & exit /b 1)
 python -c "import json; d=json.load(open('%IMG_JSON%',encoding='utf-8')); print('OK' if d.get('success') else 'FAIL: '+d.get('error','?')+'\n   images:',len(d.get('images',[])),'| seed:',d.get('seed','?'))"
@@ -107,11 +114,11 @@ echo.
 :: ============================================================================
 :: STEP 4/7: video/generate --base-images
 :: ============================================================================
-echo [%TIME%] Step 4/7: video/generate (array path, 3 images x 4 frames) ...
+echo [%TIME%] Step 4/8: video/generate (array path, 3 images x %VID_FRAMES% frames) ...
 if %DRY_RUN%==1 (
-  echo {"success":true,"images":3,"frames":12,"model":"ken-burns","duration":9.25,"dryRun":true} > "%BROLL_JSON%"
+  echo {"success":true,"images":3,"frames":9,"model":"ken-burns","duration":6.94,"dryRun":true} > "%BROLL_JSON%"
 ) else (
-  python -c "import json,subprocess,sys; d=json.load(open('%IMG_JSON%',encoding='utf-8')); imgs=','.join(d['images']); r=subprocess.run([sys.executable,'scripts/video_generate.py','--base-images',imgs,'--prompt','%VID_PROMPT%','--frames','4','--output',r'%BROLL_OUT%'],capture_output=True,text=True,cwd=r'%CD%'); print(r.stdout); sys.exit(r.returncode)" > "%BROLL_JSON%" 2>&1
+  python -c "import json,subprocess,sys; d=json.load(open('%IMG_JSON%',encoding='utf-8')); imgs=','.join(d['images']); r=subprocess.run([sys.executable,'scripts/video_generate.py','--base-images',imgs,'--prompt','%VID_PROMPT%','--frames','%VID_FRAMES%','--output',r'%BROLL_OUT%'],capture_output=True,text=True,cwd=r'%CD%'); print(r.stdout); sys.exit(r.returncode)" > "%BROLL_JSON%" 2>&1
 )
 if %ERRORLEVEL% neq 0 (echo [%TIME%] FATAL: video/generate failed & type "%BROLL_JSON%" & exit /b 1)
 python -c "import json; d=json.load(open('%BROLL_JSON%',encoding='utf-8')); print('OK' if d.get('success') else 'FAIL: '+d.get('error','?')+'\n   images:',d.get('images','?'),'| frames:',d.get('frames','?'),'| duration:',round(d.get('duration',0),1),'s')"
@@ -120,7 +127,7 @@ echo.
 :: ============================================================================
 :: STEP 5/7: ffmpeg_tiktok
 :: ============================================================================
-echo [%TIME%] Step 5/7: ffmpeg_tiktok (1080x1920, subtitles) ...
+echo [%TIME%] Step 5/8: ffmpeg_tiktok (1080x1920, subtitles) ...
 if %DRY_RUN%==1 (
   echo {"success":true,"videoPath":"%TIKTOK_OUT%","width":1080,"height":1920,"fps":24,"duration":22.0,"codecVideo":"h264","codecAudio":"aac","dryRun":true} > "%TIKTOK_JSON%"
 ) else (
@@ -131,9 +138,9 @@ python -c "import json; d=json.load(open('%TIKTOK_JSON%',encoding='utf-8')); pri
 echo.
 
 :: ============================================================================
-:: STEP 6/7: artifacts/store
+:: STEP 6/8: artifacts/store
 :: ============================================================================
-echo [%TIME%] Step 6/7: artifacts/store ...
+echo [%TIME%] Step 6/8: artifacts/store ...
 if %DRY_RUN%==1 (
   echo {"success":true,"artifactId":"dry-run-000000000000","path":"%TIKTOK_OUT%","dryRun":true} > "%ARTIFACT_JSON%"
 ) else (
@@ -144,16 +151,34 @@ python -c "import json; d=json.load(open('%ARTIFACT_JSON%',encoding='utf-8')); p
 echo.
 
 :: ============================================================================
-:: STEP 7/7: youtube/upload
+:: STEP 7/8: youtube/upload
 :: ============================================================================
-echo [%TIME%] Step 7/7: youtube/upload (privacy=%YT_PRIVACY%) ...
+echo [%TIME%] Step 7/8: youtube/upload (privacy=%YT_PRIVACY%) ...
 if %DRY_RUN%==1 (
   echo {"success":true,"videoId":"dry-run-000000000000","url":"https://youtu.be/dry-run","dryRun":true} > "%YT_JSON%"
 ) else (
   python scripts/youtube_upload_pipeline.py --video "%TIKTOK_OUT%" --topic "%TOPIC%" --privacy %YT_PRIVACY% > "%YT_JSON%" 2>&1
 )
-if %ERRORLEVEL% neq 0 (echo [%TIME%] FATAL: youtube/upload failed & type "%YT_JSON%" & exit /b 1)
+if %ERRORLEVEL% neq 0 (echo [%TIME%] FATAL: Step 7 youtube/upload failed & type "%YT_JSON%" & exit /b 1)
 python -c "import json; d=json.load(open('%YT_JSON%',encoding='utf-8')); print('OK' if d.get('success') else 'FAIL: '+d.get('error','?')+'\n   url:',d.get('url','?'))"
+echo.
+
+:: ============================================================================
+:: STEP 8/8: tiktok/upload
+:: ============================================================================
+echo [%TIME%] Step 8/8: tiktok/upload (privacy=%TT_PRIVACY%, enabled=%TT_ENABLED%) ...
+if %TT_ENABLED%==0 (
+  echo [%TIME%] TikTok upload disabled (TT_ENABLED=0)
+  python -c "import json,pathlib; pathlib.Path(r'%TT_JSON%').write_text(json.dumps({'success':True,'publish_id':'skipped','url':'','dryRun':True}))"
+) else (
+  if %DRY_RUN%==1 (
+    python -c "import json,pathlib; pathlib.Path(r'%TT_JSON%').write_text(json.dumps({'success':True,'publish_id':'dry-run-publish','video_id':'','url':'','title':'%TOPIC%','dryRun':True}))"
+  ) else (
+    python scripts/tiktok_upload.py --video "%TIKTOK_OUT%" --topic "%TOPIC%" --privacy %TT_PRIVACY% > "%TT_JSON%" 2>&1
+  )
+)
+if %ERRORLEVEL% neq 0 (echo [%TIME%] FATAL: Step 8 tiktok/upload failed & type "%TT_JSON%" & exit /b 1)
+python -c "import json; d=json.load(open('%TT_JSON%',encoding='utf-8')); print('OK' if d.get('success') else 'FAIL: '+d.get('error','?')+'\n   url:',d.get('url','?'))"
 echo.
 
 :: ============================================================================
@@ -164,11 +189,12 @@ echo # Money Printer COMPLETE — %DATE% %TIME%
 if %DRY_RUN%==1 (
   echo # MODE: dry-run (no artifacts)
 ) else (
-  echo # Video: %TIKTOK_OUT%
+  echo # TikTok Video: %TIKTOK_OUT%
   echo # Voice: %VOICE_WAV%
   echo # B-Roll: %BROLL_OUT%
   echo # Images: %IMG_OUT%\
   if exist "%YT_JSON%" python -c "import json; d=json.load(open('%YT_JSON%',encoding='utf-8')); print('  YouTube:', d.get('url','-') if d.get('success') else 'Upload fehlgeschlagen')"
+  if exist "%TT_JSON%" python -c "import json; d=json.load(open('%TT_JSON%',encoding='utf-8')); print('  TikTok:', d.get('url','-') if d.get('success') else ('skipped' if d.get('publish_id')=='skipped' else 'Upload fehlgeschlagen'))"
 )
 echo ################################################################################
 

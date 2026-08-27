@@ -248,7 +248,7 @@ def parse_args():
     ap.add_argument("--negative-prompt", default=DEFAULT_NEGATIVE)
     ap.add_argument("--width", type=int, default=576)
     ap.add_argument("--height", type=int, default=1024)
-    ap.add_argument("--steps", type=int, default=25)
+    ap.add_argument("--steps", type=int, default=20)
     ap.add_argument("--cfg", type=float, default=7.0)
     ap.add_argument("--seed", type=int, default=177013)
     ap.add_argument("--frames", type=int, default=6)
